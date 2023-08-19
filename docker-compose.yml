@@ -1,0 +1,51 @@
+version: "3"
+
+networks:
+  my_bridge_network:  # Define a custom bridge network
+    driver: bridge
+
+services:
+  db:
+    image: postgres:latest
+    container_name: postgres
+    # command: redis-server --port 6379 --databases 1
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - my_bridge_network
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+  django:
+    image: vish29/layphone_api:latest
+    container_name: django
+    command: >
+      sh -c "python manage.py makemigrations
+             python manage.py migrate
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    restart: always
+    networks:
+      - my_bridge_network  # Attach the service to the custom bridge network
+
+  # react_app:
+  #   image: vish29/layphone_client:latest
+  #   container_name: react_app
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - django
+  #   restart: always
+  #   networks:
+  #     - my_bridge_network  # Attach the service to the custom bridge network
+
+
+volumes:
+  postgres_data:
